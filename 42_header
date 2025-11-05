@@ -82,18 +82,15 @@ usage() {
   echo '      -h HELP      display this message.'
 }
 
-MODE="add"
+MODE="up"
 RECURSIVE=""
-while getopts aurh OPTION; do
+while getopts arh OPTION; do
   case ${OPTION} in
   a)
     MODE="add"
     ;;
   r)
     RECURSIVE="true"
-    ;;
-  u)
-    MODE="up"
     ;;
   h)
     usage
@@ -110,7 +107,6 @@ done
 
 # #######################################################################################
 # #######################################################################################
-
 if [[ -n "$RECURSIVE" ]]; then
   FOLDERS=$(find . -type d -not -path '*/.*')
 else
@@ -132,7 +128,7 @@ echo "$FOLDERS" | while IFS= read -r FOLDER; do
 
           FILE_TMP="${FULL_PATH}_addheader_tmp"
 
-          cp "$FILE" "$FILE_TMP"
+          cp "$FULL_PATH" "$FILE_TMP"
           echo "$HEADER" > "$FULL_PATH"
           cat "$FILE_TMP" >> "$FULL_PATH"
           rm "$FILE_TMP"
@@ -146,7 +142,6 @@ echo "$FOLDERS" | while IFS= read -r FOLDER; do
       up)
         update "$FULL_PATH" "$FILE"
       ;;
-
       esac
     fi
   done

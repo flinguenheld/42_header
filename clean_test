@@ -1,0 +1,8 @@
+rm aaa.h
+rm bbb.c
+rm ccc.h
+rm ddd.c
+rm eee.h
+rm fff.c
+
+rm -r sub

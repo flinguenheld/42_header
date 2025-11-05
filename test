@@ -1,0 +1,12 @@
+echo "aaa" > aaa.h
+echo "bbb" > bbb.c
+echo "ccc" > ccc.h
+echo "ddd" > ddd.c
+echo "eee" > eee.h
+echo "fff" > fff.c
+
+mkdir sub
+echo "ggg" > sub/ggg.h
+echo "hhh" > sub/hhh.c
+echo "iii" > sub/iii.h
+echo "jjj" > sub/jjj.c
