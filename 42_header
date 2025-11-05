@@ -78,8 +78,14 @@ update() {
 }
 
 usage() {
-  echo "Usage: $(basename "${0}") [OPTION] FILE..."
-  echo '      -h HELP      display this message.'
+  echo "Usage: $(basename "${0}") [OPTION]..."
+  echo
+  echo "Open all .h & .c in the current folder to update their 42 header if there's one."
+  echo "Only update if the last modification date/time is different than the saved one or if the file has been renamed."
+  echo
+  echo "      -a ADD          Add the header in all files if there's not."
+  echo "      -r RECURSIVE    Do the action in the current folder and all subfolders (except hidden ones)."
+  echo "      -h HELP         Display this message."
 }
 
 MODE="up"

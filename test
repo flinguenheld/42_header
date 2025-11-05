@@ -1,12 +1,29 @@
-echo "aaa" > aaa.h
-echo "bbb" > bbb.c
-echo "ccc" > ccc.h
-echo "ddd" > ddd.c
-echo "eee" > eee.h
-echo "fff" > fff.c
+#!/usr/bin/env bash
 
-mkdir sub
-echo "ggg" > sub/ggg.h
-echo "hhh" > sub/hhh.c
-echo "iii" > sub/iii.h
-echo "jjj" > sub/jjj.c
+if [[ "$1" == "clean" ]]; then
+
+  rm aaa.h
+  rm bbb.c
+  rm ccc.h
+  rm ddd.c
+  rm eee.h
+  rm fff.c
+
+  rm -r sub
+
+else
+
+  echo "aaa" > aaa.h
+  echo "bbb" > bbb.c
+  echo "ccc" > ccc.h
+  echo "ddd" > ddd.c
+  echo "eee" > eee.h
+  echo "fff" > fff.c
+
+  mkdir sub
+  echo "ggg" > sub/ggg.h
+  echo "hhh" > sub/hhh.c
+  echo "iii" > sub/iii.h
+  echo "jjj" > sub/jjj.c
+
+fi
