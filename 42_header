@@ -1,101 +1,11 @@
 #!/usr/bin/env bash
 # Florent Linguenheld 2025
 
-update() {
-  FULL_PATH="$1"
-  FILE_NAME="$2"
-
-  # Check if there's already one
-  if [[ $(sed -n -e 1p "$FULL_PATH") == "${TOPBOT}" ]]; then
-    if [[ $(sed -n -e 7p "$FULL_PATH") == "${MIDDLE}" ]]; then
-      if [[ $(sed -n -e 11p "$FULL_PATH") == "${TOPBOT}" ]]; then
-
-        echo "Up possible on: '$FULL_PATH'"
-        FILE_NAME_LINE=$(sed -n -e 4p "$FILE_NAME")
-
-        # Filename field ------------------------------------------
-        if [[ $(echo "$FILE_NAME_LINE" | awk '{print $2}') != "$FILE_NAME" ]]; then
-
-          OLD_NAME=${FILE_NAME_LINE:5:50}
-          NEW_NAME="$FILE_NAME"
-          while [[ $(echo "$NEW_NAME" | wc -m) -ne 51 ]]; do
-            NEW_NAME="${NEW_NAME} "
-          done
-
-          sed -i "4s%${OLD_NAME}%${NEW_NAME}%" "$FULL_PATH"
-        fi
-        
-        # Update field --------------------------------------------
-        UPDATE_LINE=$(sed '9q;d' ${FULL_PATH})
-
-
-        OLD_DAY=$(echo "$UPDATE_LINE" | awk '{print $3}')
-        OLD_HOUR=$(echo "$UPDATE_LINE" | awk '{print $4}')
-        OLD_LAD=$(echo "$UPDATE_LINE" | awk '{print $6}')
-
-        date -r "$FULL_PATH" +'%Y/%m/%d'
-          echo "$OLD_DAY" | cat -e
-                 
-        date -r "$FULL_PATH" +'%H:%M:%S'
-          echo "$OLD_HOUR" | cat -e
-
-        if [[ $(date -r "$FULL_PATH" '+%Y/%m/%d') != "$OLD_DAY" || $(date -r "$FULL_PATH" '+%H:%M:%S') != "$OLD_HOUR" ]]; then
-
-          echo "NEW TIME !!!! for ${FULL_PATH}"
-          # echo "$OLD_DAY" | cat -e
-          # echo "$OLD_HOUR" | cat -e
-          # echo "$OLD_LAD" | cat -e
-          sed -i "9s%${OLD_DAY}%${NEW_DAY}%" "$FULL_PATH"
-          sed -i "9s%${OLD_HOUR}%${NEW_HOUR}%" "$FULL_PATH"
-          sed -i "9s%${OLD_LAD}%${ME}%" "$FULL_PATH"
-
-        fi
-
-      fi
-    fi
-  fi
-}
-
-usage() {
-	# echo "Usage: $(basename "${0}") [-a] | [-h] FILE..."
-	echo "Usage: $(basename "${0}") [OPTION] FILE..."
-	echo '      -h HELP      display this message.'
-}
-
-MODE="add"
-RECURSIVE=""
-while getopts aurh OPTION; do
-	case ${OPTION} in
-	a)
-		MODE="add"
-		;;
-	r)
-		RECURSIVE="true"
-		;;
-	u)
-		MODE="up"
-		;;
-	h)
-		usage
-		exit 0
-		;;
-	?)
-		echo
-
-		usage 2>&1
-		exit 1
-		;;
-	esac
-  # shift
-done
-shift $((OPTIND - 1))
-
-# ---------------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------------
-
 TOPBOT="/* ************************************************************************** */"
 MIDDLE="/*                                                +#+#+#+#+#+   +#+           */"
+EMPTYY="/*                                                                            */"
 
+ME="flinguen"
 HEADER="/* ************************************************************************** */
 /*                                                                            */
 /*                                                       :::      ::::::::    */
@@ -108,12 +18,98 @@ HEADER="/* *********************************************************************
 /*                                                                            */
 /* ************************************************************************** */"
 
-ME="flinguen"
-NEW_DAY=$(date '+%Y/%m/%d')
-NEW_HOUR=$(date '+%H:%M:%S')
 
-echo "params: $@"
-echo "rec: $RECURSIVE" | cat -e
+# #######################################################################################
+# #######################################################################################
+is_there_already_one() {
+  FULL_PATH="$1"
+
+  if [[ $(sed -n -e  1p "$FULL_PATH") == "${TOPBOT}" &&
+        $(sed -n -e  2p "$FULL_PATH") == "${EMPTYY}" &&
+        $(sed -n -e  7p "$FULL_PATH") == "${MIDDLE}" &&
+        $(sed -n -e 10p "$FULL_PATH") == "${EMPTYY}" &&
+        $(sed -n -e 11p "$FULL_PATH") == "${TOPBOT}" ]]; then
+    echo "TRUE"
+  else
+    echo "FALSE"
+  fi
+}
+
+update() {
+  FULL_PATH="$1"
+  FILE_NAME="$2"
+
+  if [[ $(is_there_already_one "$FULL_PATH") == "TRUE" ]]; then
+
+    FILE_NAME_LINE=$(sed -n -e 4p "$FULL_PATH")
+
+    # Filename field ------------------------------------------
+    if [[ $(echo "$FILE_NAME_LINE" | awk '{print $2}') != "$FILE_NAME" ]]; then
+
+      OLD_NAME=${FILE_NAME_LINE:5:50}
+      NEW_NAME="$FILE_NAME"
+      while [[ $(echo "$NEW_NAME" | wc -m) -ne 51 ]]; do
+        NEW_NAME="${NEW_NAME} "
+      done
+
+      sed -i "4s%${OLD_NAME}%${NEW_NAME}%" "$FULL_PATH"
+    fi
+    
+    # Updated field -------------------------------------------
+    UPDATE_LINE=$(sed '9q;d' ${FULL_PATH})
+
+    OLD_DAY=$(echo "$UPDATE_LINE" | awk '{print $3}')
+    OLD_HOUR=$(echo "$UPDATE_LINE" | awk '{print $4}')
+    OLD_LAD=$(echo "$UPDATE_LINE" | awk '{print $6}')
+
+    if [[ $(date -r "$FULL_PATH" '+%Y/%m/%d') != "$OLD_DAY" ||
+          $(date -r "$FULL_PATH" '+%H:%M:%S') != "$OLD_HOUR" ]]; then
+
+      NEW_DAY=$(date '+%Y/%m/%d')
+      NEW_HOUR=$(date '+%H:%M:%S')
+
+      sed -i "9s%${OLD_DAY}%${NEW_DAY}%" "$FULL_PATH"
+      sed -i "9s%${OLD_HOUR}%${NEW_HOUR}%" "$FULL_PATH"
+      sed -i "9s%${OLD_LAD}%${ME}%" "$FULL_PATH"
+
+      echo "${FULL_PATH} updated"
+    fi
+  fi
+}
+
+usage() {
+  echo "Usage: $(basename "${0}") [OPTION] FILE..."
+  echo '      -h HELP      display this message.'
+}
+
+MODE="add"
+RECURSIVE=""
+while getopts aurh OPTION; do
+  case ${OPTION} in
+  a)
+    MODE="add"
+    ;;
+  r)
+    RECURSIVE="true"
+    ;;
+  u)
+    MODE="up"
+    ;;
+  h)
+    usage
+    exit 0
+    ;;
+  ?)
+    echo
+    usage 2>&1
+    exit 1
+    ;;
+  esac
+done
+# shift $((OPTIND - 1))
+
+# #######################################################################################
+# #######################################################################################
 
 if [[ -n "$RECURSIVE" ]]; then
   FOLDERS=$(find . -type d -not -path '*/.*')
@@ -121,55 +117,37 @@ else
   FOLDERS="."
 fi
 
-echo "$FOLDERS"
-
 echo "$FOLDERS" | while IFS= read -r FOLDER; do
 
   find "$FOLDER" -maxdepth 1 | grep -E '(\.c$)|(\.h$)' | while read FULL_PATH; do
 
-    echo "This folder: $FOLDER"
-    echo "This path: $FULL_PATH"
-
     FILE="${FULL_PATH##*/}"
-    echo "This file: $FILE"
 
-      if [[ -e "$FULL_PATH" && ("${FILE##*.}" == "c" || "${FILE##*.}" == "h") ]]; then
-        echo "This one exists '$FILE'"
+    if [[ -e "$FULL_PATH" && ("${FILE##*.}" == "c" || "${FILE##*.}" == "h") ]]; then
 
-        case "$MODE" in
-        add)
-          echo "Add on: '$FILE'"
+      case "$MODE" in
 
-          # Check if there's already one
-          if [[ $(sed -n -e 1p "$FILE") != "${TOPBOT}" ]]; then
-            if [[ $(sed -n -e 7p "$FILE") != "${MIDDLE}" ]]; then
-              if [[ $(sed -n -e 11p "$FILE") != "${TOPBOT}" ]]; then
+      add)
+        if [[ $(is_there_already_one "$FULL_PATH") == "FALSE" ]]; then
 
-                FILE_TMP="${FILE}_addheader_tmp"
+          FILE_TMP="${FULL_PATH}_addheader_tmp"
 
-                echo "Add possible on: '$FILE'"
+          cp "$FILE" "$FILE_TMP"
+          echo "$HEADER" > "$FULL_PATH"
+          cat "$FILE_TMP" >> "$FULL_PATH"
+          rm "$FILE_TMP"
 
-                cp "$FILE" "$FILE_TMP"
-                echo "$HEADER" > "$FILE"
-                cat "$FILE_TMP" >> "$FILE"
-                rm "$FILE_TMP"
+          echo "${FULL_PATH} added"
 
-                update "$FULL_PATH" "$FILE"
-
-                cat "$FILE" | cat -e
-              fi
-            fi
-          fi
-
-        
-        ;;
-        up)
-
-          echo "Up on: '$FILE'"
           update "$FULL_PATH" "$FILE"
-        ;;
+        fi
 
-        esac
-      fi
+      ;;
+      up)
+        update "$FULL_PATH" "$FILE"
+      ;;
+
+      esac
+    fi
   done
 done
