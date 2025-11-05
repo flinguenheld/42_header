@@ -50,12 +50,14 @@ HEADER="/* *********************************************************************
 /*                                                                            */
 /* ************************************************************************** */"
 
+ME="flinguen"
+NEW_DAY=$(date '+%Y/%m/%d')
+NEW_HOUR=$(date '+%H:%M:%S')
 
 for FILE in "$@"
 do
     if [[ -e "$FILE" && ("${FILE##*.}" == "c" || "${FILE##*.}" == "h") ]]; then
       echo "This one exists '$FILE'"
-
 
       case "$MODE" in
       add)
@@ -66,10 +68,9 @@ do
           if [[ $(sed -n -e 7p "$FILE") != "${MIDDLE}" ]]; then
             if [[ $(sed -n -e 11p "$FILE") != "${TOPBOT}" ]]; then
 
-              FILE_TMP="${FILE}_tmp"
+              FILE_TMP="${FILE}_addheader_tmp"
 
               echo "Add possible on: '$FILE'"
-
 
               NAME="$FILE"
               echo "$NAME" | wc -m
@@ -77,19 +78,16 @@ do
               while [[ $(echo "$NAME" | wc -m) -ne 51 ]]; do
                 NAME="${NAME} "
               done
-              
 
               echo "$NAME" | cat -e
-              HEADER=$(echo "$HEADER" | sed "s/RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR/${NAME}/")
+              NEW_HEADER=$(echo "$HEADER" | sed "s/RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR/${NAME}/")
 
               cp "$FILE" "$FILE_TMP"
-              echo "$HEADER" > "$FILE"
+              echo "$NEW_HEADER" > "$FILE"
               cat "$FILE_TMP" >> "$FILE"
               rm "$FILE_TMP"
 
               cat "$FILE" | cat -e
-
-
             fi
           fi
         fi
@@ -97,10 +95,32 @@ do
         
       ;;
       up)
+
         echo "Up on: '$FILE'"
 
         # Check if there's already one
+        if [[ $(sed -n -e 1p "$FILE") == "${TOPBOT}" ]]; then
+          if [[ $(sed -n -e 7p "$FILE") == "${MIDDLE}" ]]; then
+            if [[ $(sed -n -e 11p "$FILE") == "${TOPBOT}" ]]; then
 
+              echo "Up possible on: '$FILE'"
+              # Filename field ------------------------------------------
+              # Update field --------------------------------------------
+              UPDATE_LINE=$(sed '9q;d' ${FILE})
+
+              OLD_DAY=$(echo "$UPDATE_LINE" | awk '{print $3}')
+              OLD_HOUR=$(echo "$UPDATE_LINE" | awk '{print $4}')
+              OLD_LAD=$(echo "$UPDATE_LINE" | awk '{print $6}')
+
+              echo "$OLD_DAY" | cat -e
+              echo "$OLD_HOUR" | cat -e
+              echo "$OLD_LAD" | cat -e
+              sed -i "9s%${OLD_DAY}%${NEW_DAY}%" "$FILE"
+              sed -i "9s%${OLD_HOUR}%${NEW_HOUR}%" "$FILE"
+              sed -i "9s%${OLD_LAD}%${ME}%" "$FILE"
+            fi
+          fi
+        fi
       ;;
 
       esac
