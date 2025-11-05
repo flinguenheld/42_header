@@ -1,7 +1,46 @@
 #!/usr/bin/env bash
-# Florent Linguenheld 2022
+# Florent Linguenheld 2025
 
+update() {
+  FILE="$1"
 
+  # Check if there's already one
+  if [[ $(sed -n -e 1p "$FILE") == "${TOPBOT}" ]]; then
+    if [[ $(sed -n -e 7p "$FILE") == "${MIDDLE}" ]]; then
+      if [[ $(sed -n -e 11p "$FILE") == "${TOPBOT}" ]]; then
+
+        echo "Up possible on: '$FILE'"
+        # Filename field ------------------------------------------
+        FILE_NAME_LINE=$(sed -n -e 4p "$FILE")
+        OLD_NAME=${FILE_NAME_LINE:5:50}
+        NEW_NAME="$FILE"
+
+        while [[ $(echo "$NEW_NAME" | wc -m) -ne 51 ]]; do
+          NEW_NAME="${NEW_NAME} "
+        done
+
+        # echo "$OLD_NAME" | cat -e
+        # echo "$NEW_NAME" | cat -e
+
+        sed -i "4s%${OLD_NAME}%${NEW_NAME}%" "$FILE"
+        
+        # Update field --------------------------------------------
+        UPDATE_LINE=$(sed '9q;d' ${FILE})
+
+        OLD_DAY=$(echo "$UPDATE_LINE" | awk '{print $3}')
+        OLD_HOUR=$(echo "$UPDATE_LINE" | awk '{print $4}')
+        OLD_LAD=$(echo "$UPDATE_LINE" | awk '{print $6}')
+
+        # echo "$OLD_DAY" | cat -e
+        # echo "$OLD_HOUR" | cat -e
+        # echo "$OLD_LAD" | cat -e
+        sed -i "9s%${OLD_DAY}%${NEW_DAY}%" "$FILE"
+        sed -i "9s%${OLD_HOUR}%${NEW_HOUR}%" "$FILE"
+        sed -i "9s%${OLD_LAD}%${ME}%" "$FILE"
+      fi
+    fi
+  fi
+}
 
 usage() {
 	# echo "Usage: $(basename "${0}") [-a] | [-h] FILE..."
@@ -41,12 +80,12 @@ MIDDLE="/*                                                +#+#+#+#+#+   +#+     
 HEADER="/* ************************************************************************** */
 /*                                                                            */
 /*                                                       :::      ::::::::    */
-/*   RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR :+:      :+:    :+:   */
+/*   pouet                                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: flinguen <florent@linguenheld.net>          +#+  +:+       +#+       */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: $(date '+%Y/%m/%d %H:%M:%S') by flinguen          #+#    #+#             */
-/*   Updated: $(date '+%Y/%m/%d %H:%M:%S') by flinguen         ###   ########.fr       */
+/*   Updated: pouetpouet pouetpouet by pouett         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */"
 
@@ -72,20 +111,12 @@ do
 
               echo "Add possible on: '$FILE'"
 
-              NAME="$FILE"
-              echo "$NAME" | wc -m
-
-              while [[ $(echo "$NAME" | wc -m) -ne 51 ]]; do
-                NAME="${NAME} "
-              done
-
-              echo "$NAME" | cat -e
-              NEW_HEADER=$(echo "$HEADER" | sed "s/RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR/${NAME}/")
-
               cp "$FILE" "$FILE_TMP"
-              echo "$NEW_HEADER" > "$FILE"
+              echo "$HEADER" > "$FILE"
               cat "$FILE_TMP" >> "$FILE"
               rm "$FILE_TMP"
+
+              update "$FILE"
 
               cat "$FILE" | cat -e
             fi
@@ -97,34 +128,10 @@ do
       up)
 
         echo "Up on: '$FILE'"
-
-        # Check if there's already one
-        if [[ $(sed -n -e 1p "$FILE") == "${TOPBOT}" ]]; then
-          if [[ $(sed -n -e 7p "$FILE") == "${MIDDLE}" ]]; then
-            if [[ $(sed -n -e 11p "$FILE") == "${TOPBOT}" ]]; then
-
-              echo "Up possible on: '$FILE'"
-              # Filename field ------------------------------------------
-              # Update field --------------------------------------------
-              UPDATE_LINE=$(sed '9q;d' ${FILE})
-
-              OLD_DAY=$(echo "$UPDATE_LINE" | awk '{print $3}')
-              OLD_HOUR=$(echo "$UPDATE_LINE" | awk '{print $4}')
-              OLD_LAD=$(echo "$UPDATE_LINE" | awk '{print $6}')
-
-              echo "$OLD_DAY" | cat -e
-              echo "$OLD_HOUR" | cat -e
-              echo "$OLD_LAD" | cat -e
-              sed -i "9s%${OLD_DAY}%${NEW_DAY}%" "$FILE"
-              sed -i "9s%${OLD_HOUR}%${NEW_HOUR}%" "$FILE"
-              sed -i "9s%${OLD_LAD}%${ME}%" "$FILE"
-            fi
-          fi
-        fi
+        update "$FILE"
       ;;
 
       esac
 
     fi
 done
-
