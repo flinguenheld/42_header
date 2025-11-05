@@ -2,41 +2,55 @@
 # Florent Linguenheld 2025
 
 update() {
-  FILE="$1"
+  FULL_PATH="$1"
+  FILE_NAME="$2"
 
   # Check if there's already one
-  if [[ $(sed -n -e 1p "$FILE") == "${TOPBOT}" ]]; then
-    if [[ $(sed -n -e 7p "$FILE") == "${MIDDLE}" ]]; then
-      if [[ $(sed -n -e 11p "$FILE") == "${TOPBOT}" ]]; then
+  if [[ $(sed -n -e 1p "$FULL_PATH") == "${TOPBOT}" ]]; then
+    if [[ $(sed -n -e 7p "$FULL_PATH") == "${MIDDLE}" ]]; then
+      if [[ $(sed -n -e 11p "$FULL_PATH") == "${TOPBOT}" ]]; then
 
-        echo "Up possible on: '$FILE'"
+        echo "Up possible on: '$FULL_PATH'"
+        FILE_NAME_LINE=$(sed -n -e 4p "$FILE_NAME")
+
         # Filename field ------------------------------------------
-        FILE_NAME_LINE=$(sed -n -e 4p "$FILE")
-        OLD_NAME=${FILE_NAME_LINE:5:50}
-        NEW_NAME="$FILE"
+        if [[ $(echo "$FILE_NAME_LINE" | awk '{print $2}') != "$FILE_NAME" ]]; then
 
-        while [[ $(echo "$NEW_NAME" | wc -m) -ne 51 ]]; do
-          NEW_NAME="${NEW_NAME} "
-        done
+          OLD_NAME=${FILE_NAME_LINE:5:50}
+          NEW_NAME="$FILE_NAME"
+          while [[ $(echo "$NEW_NAME" | wc -m) -ne 51 ]]; do
+            NEW_NAME="${NEW_NAME} "
+          done
 
-        # echo "$OLD_NAME" | cat -e
-        # echo "$NEW_NAME" | cat -e
-
-        sed -i "4s%${OLD_NAME}%${NEW_NAME}%" "$FILE"
+          sed -i "4s%${OLD_NAME}%${NEW_NAME}%" "$FULL_PATH"
+        fi
         
         # Update field --------------------------------------------
-        UPDATE_LINE=$(sed '9q;d' ${FILE})
+        UPDATE_LINE=$(sed '9q;d' ${FULL_PATH})
+
 
         OLD_DAY=$(echo "$UPDATE_LINE" | awk '{print $3}')
         OLD_HOUR=$(echo "$UPDATE_LINE" | awk '{print $4}')
         OLD_LAD=$(echo "$UPDATE_LINE" | awk '{print $6}')
 
-        # echo "$OLD_DAY" | cat -e
-        # echo "$OLD_HOUR" | cat -e
-        # echo "$OLD_LAD" | cat -e
-        sed -i "9s%${OLD_DAY}%${NEW_DAY}%" "$FILE"
-        sed -i "9s%${OLD_HOUR}%${NEW_HOUR}%" "$FILE"
-        sed -i "9s%${OLD_LAD}%${ME}%" "$FILE"
+        date -r "$FULL_PATH" +'%Y/%m/%d'
+          echo "$OLD_DAY" | cat -e
+                 
+        date -r "$FULL_PATH" +'%H:%M:%S'
+          echo "$OLD_HOUR" | cat -e
+
+        if [[ $(date -r "$FULL_PATH" '+%Y/%m/%d') != "$OLD_DAY" || $(date -r "$FULL_PATH" '+%H:%M:%S') != "$OLD_HOUR" ]]; then
+
+          echo "NEW TIME !!!! for ${FULL_PATH}"
+          # echo "$OLD_DAY" | cat -e
+          # echo "$OLD_HOUR" | cat -e
+          # echo "$OLD_LAD" | cat -e
+          sed -i "9s%${OLD_DAY}%${NEW_DAY}%" "$FULL_PATH"
+          sed -i "9s%${OLD_HOUR}%${NEW_HOUR}%" "$FULL_PATH"
+          sed -i "9s%${OLD_LAD}%${ME}%" "$FULL_PATH"
+
+        fi
+
       fi
     fi
   fi
@@ -48,14 +62,18 @@ usage() {
 	echo '      -h HELP      display this message.'
 }
 
-MODE='save'
-while getopts auh OPTION; do
+MODE="add"
+RECURSIVE=""
+while getopts aurh OPTION; do
 	case ${OPTION} in
 	a)
-		MODE='add'
+		MODE="add"
+		;;
+	r)
+		RECURSIVE="true"
 		;;
 	u)
-		MODE='up'
+		MODE="up"
 		;;
 	h)
 		usage
@@ -68,8 +86,9 @@ while getopts auh OPTION; do
 		exit 1
 		;;
 	esac
-  shift
+  # shift
 done
+shift $((OPTIND - 1))
 
 # ---------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------
@@ -93,45 +112,64 @@ ME="flinguen"
 NEW_DAY=$(date '+%Y/%m/%d')
 NEW_HOUR=$(date '+%H:%M:%S')
 
-for FILE in "$@"
-do
-    if [[ -e "$FILE" && ("${FILE##*.}" == "c" || "${FILE##*.}" == "h") ]]; then
-      echo "This one exists '$FILE'"
+echo "params: $@"
+echo "rec: $RECURSIVE" | cat -e
 
-      case "$MODE" in
-      add)
-        echo "Add on: '$FILE'"
+if [[ -n "$RECURSIVE" ]]; then
+  FOLDERS=$(find . -type d -not -path '*/.*')
+else
+  FOLDERS="."
+fi
 
-        # Check if there's already one
-        if [[ $(sed -n -e 1p "$FILE") != "${TOPBOT}" ]]; then
-          if [[ $(sed -n -e 7p "$FILE") != "${MIDDLE}" ]]; then
-            if [[ $(sed -n -e 11p "$FILE") != "${TOPBOT}" ]]; then
+echo "$FOLDERS"
 
-              FILE_TMP="${FILE}_addheader_tmp"
+echo "$FOLDERS" | while IFS= read -r FOLDER; do
 
-              echo "Add possible on: '$FILE'"
+  find "$FOLDER" -maxdepth 1 | grep -E '(\.c$)|(\.h$)' | while read FULL_PATH; do
 
-              cp "$FILE" "$FILE_TMP"
-              echo "$HEADER" > "$FILE"
-              cat "$FILE_TMP" >> "$FILE"
-              rm "$FILE_TMP"
+    echo "This folder: $FOLDER"
+    echo "This path: $FULL_PATH"
 
-              update "$FILE"
+    FILE="${FULL_PATH##*/}"
+    echo "This file: $FILE"
 
-              cat "$FILE" | cat -e
+      if [[ -e "$FULL_PATH" && ("${FILE##*.}" == "c" || "${FILE##*.}" == "h") ]]; then
+        echo "This one exists '$FILE'"
+
+        case "$MODE" in
+        add)
+          echo "Add on: '$FILE'"
+
+          # Check if there's already one
+          if [[ $(sed -n -e 1p "$FILE") != "${TOPBOT}" ]]; then
+            if [[ $(sed -n -e 7p "$FILE") != "${MIDDLE}" ]]; then
+              if [[ $(sed -n -e 11p "$FILE") != "${TOPBOT}" ]]; then
+
+                FILE_TMP="${FILE}_addheader_tmp"
+
+                echo "Add possible on: '$FILE'"
+
+                cp "$FILE" "$FILE_TMP"
+                echo "$HEADER" > "$FILE"
+                cat "$FILE_TMP" >> "$FILE"
+                rm "$FILE_TMP"
+
+                update "$FULL_PATH" "$FILE"
+
+                cat "$FILE" | cat -e
+              fi
             fi
           fi
-        fi
 
         
-      ;;
-      up)
+        ;;
+        up)
 
-        echo "Up on: '$FILE'"
-        update "$FILE"
-      ;;
+          echo "Up on: '$FILE'"
+          update "$FULL_PATH" "$FILE"
+        ;;
 
-      esac
-
-    fi
+        esac
+      fi
+  done
 done
