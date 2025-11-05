@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# Florent Linguenheld 2022
+
+
+
+usage() {
+	# echo "Usage: $(basename "${0}") [-a] | [-h] FILE..."
+	echo "Usage: $(basename "${0}") [OPTION] FILE..."
+	echo '      -h HELP      display this message.'
+}
+
+MODE='save'
+while getopts auh OPTION; do
+	case ${OPTION} in
+	a)
+		MODE='add'
+		;;
+	u)
+		MODE='up'
+		;;
+	h)
+		usage
+		exit 0
+		;;
+	?)
+		echo
+
+		usage 2>&1
+		exit 1
+		;;
+	esac
+  shift
+done
+
+# ---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
+
+TOPBOT="/* ************************************************************************** */"
+MIDDLE="/*                                                +#+#+#+#+#+   +#+           */"
+
+HEADER="/* ************************************************************************** */
+/*                                                                            */
+/*                                                       :::      ::::::::    */
+/*   RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: flinguen <florent@linguenheld.net>          +#+  +:+       +#+       */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: $(date '+%Y/%m/%d %H:%M:%S') by flinguen          #+#    #+#             */
+/*   Updated: $(date '+%Y/%m/%d %H:%M:%S') by flinguen         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */"
+
+
+for FILE in "$@"
+do
+    if [[ -e "$FILE" && ("${FILE##*.}" == "c" || "${FILE##*.}" == "h") ]]; then
+      echo "This one exists '$FILE'"
+
+
+      case "$MODE" in
+      add)
+        echo "Add on: '$FILE'"
+
+        # Check if there's already one
+        if [[ $(sed -n -e 1p "$FILE") != "${TOPBOT}" ]]; then
+          if [[ $(sed -n -e 7p "$FILE") != "${MIDDLE}" ]]; then
+            if [[ $(sed -n -e 11p "$FILE") != "${TOPBOT}" ]]; then
+
+              FILE_TMP="${FILE}_tmp"
+
+              echo "Add possible on: '$FILE'"
+
+
+              NAME="$FILE"
+              echo "$NAME" | wc -m
+
+              while [[ $(echo "$NAME" | wc -m) -ne 51 ]]; do
+                NAME="${NAME} "
+              done
+              
+
+              echo "$NAME" | cat -e
+              HEADER=$(echo "$HEADER" | sed "s/RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR/${NAME}/")
+
+              cp "$FILE" "$FILE_TMP"
+              echo "$HEADER" > "$FILE"
+              cat "$FILE_TMP" >> "$FILE"
+              rm "$FILE_TMP"
+
+              cat "$FILE" | cat -e
+
+
+            fi
+          fi
+        fi
+
+        
+      ;;
+      up)
+        echo "Up on: '$FILE'"
+
+        # Check if there's already one
+
+      ;;
+
+      esac
+
+    fi
+done
+
