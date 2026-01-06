@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Florent Linguenheld 2026
+
+TOPBOT="/* ************************************************************************** */"
+MIDDLE="/*                                                +#+#+#+#+#+   +#+           */"
+EMPTYY="/*                                                                            */"
+
+# #######################################################################################
+# #######################################################################################
+is_there_a_header() {
+  FULL_PATH="$1"
+
+  if [[ $(sed -n -e  1p "$FULL_PATH") == "${TOPBOT}" &&
+        $(sed -n -e  2p "$FULL_PATH") == "${EMPTYY}" &&
+        $(sed -n -e  7p "$FULL_PATH") == "${MIDDLE}" &&
+        $(sed -n -e 10p "$FULL_PATH") == "${EMPTYY}" &&
+        $(sed -n -e 11p "$FULL_PATH") == "${TOPBOT}" ]]; then
+    echo "TRUE"
+  else
+    echo "FALSE"
+  fi
+}
+
+update() {
+  FULL_PATH="$1"
+
+  if [[ $(is_there_a_header "$FULL_PATH") == "TRUE" ]]; then
+
+    # Updated field -------------------------------------------
+    UPDATE_LINE=$(sed '9q;d' "${FULL_PATH}")
+
+    UPDATE_DAY=$(echo "$UPDATE_LINE" | awk '{print $3}')
+    UPDATE_HOUR=$(echo "$UPDATE_LINE" | awk '{print $4}')
+
+    TOUCH_TIME=$(echo "$UPDATE_DAY$UPDATE_HOUR" | sed 's#/##g' | sed 's#:##' | sed 's#:#.#')
+
+    if [[ "$(date -r "$FULL_PATH" "+%Y%m%d%H%M.%S")" != "$TOUCH_TIME" ]]; then
+      echo "touch $FULL_PATH -> $UPDATE_DAY $UPDATE_HOUR"
+      touch -t "$TOUCH_TIME" "$FULL_PATH"
+    fi
+  fi
+}
+
+usage() {
+  echo "Usage: $(basename "${0}") [OPTION]..."
+  echo "Allow you to restore the modification time of files based on their 42 header."
+  echo
+  echo "Get all .h & .c files in the current folder"
+  echo "Then open one by one and:"
+  echo " -is there a 42 header ?"
+  echo " -get the written date in the field 'update'"
+  echo " -compare this date with the last modificated time"
+  echo " -if thes differ, touch the file"
+  echo
+  echo "      -r RECURSIVE    Do the action in the current folder and all subfolders (except hidden ones)."
+  echo "      -h HELP         Display this message."
+}
+
+RECURSIVE=""
+while getopts rh OPTION; do
+  case ${OPTION} in
+  r)
+    RECURSIVE="true"
+    ;;
+  h)
+    usage
+    exit 0
+    ;;
+  ?)
+    echo
+    usage 2>&1
+    exit 1
+    ;;
+  esac
+done
+
+# #######################################################################################
+# #######################################################################################
+if [[ -n "$RECURSIVE" ]]; then
+  FOLDERS=$(find . -type d -not -path '*/.*')
+else
+  FOLDERS="."
+fi
+
+echo "$FOLDERS" | while IFS= read -r FOLDER; do
+
+  find "$FOLDER" -maxdepth 1 | grep -E '(\.c$)|(\.h$)' | while read -r FULL_PATH; do
+
+    FILE="${FULL_PATH##*/}"
+
+    if [[ -e "$FULL_PATH" && ("${FILE##*.}" == "c" || "${FILE##*.}" == "h") ]]; then
+        update "$FULL_PATH" "$FILE"
+    fi
+  done
+done
